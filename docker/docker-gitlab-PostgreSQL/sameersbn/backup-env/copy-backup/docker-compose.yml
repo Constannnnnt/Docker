@@ -1,0 +1,63 @@
+version: '2'
+
+services:
+  redis:
+    restart: always
+    image: sameersbn/redis:latest
+    container_name: ${redis_name}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ${redis_path}:/var/lib/redis
+
+  postgresql:
+    restart: always
+    image: sameersbn/postgresql:9.4-22
+    container_name: ${postgres_name}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ${postgres_path}:/var/lib/postgresql
+    environment:
+      - DB_NAME=gitlabhq_production
+      - DB_USER=gitlab
+      - DB_PASS=password
+      - DB_EXTENSION=pg_trgm
+
+  gitlabs:
+    restart: always
+    image: sameersbn/gitlab:8.9.1
+    container_name: ${gitlabs_name}
+    links:
+      - redis:redisio
+      - postgresql:postgresql
+    depends_on:
+      - redis
+      - postgresql
+    ports:
+      - "${port1}:80"
+      - "${port2}:22"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ${gitlabs_path}:/home/git/data
+    environment:
+      - GITLAB_HOST=${HOST_IP}
+      - GITLAB_PORT=${port1}
+      - GITLAB_ROOT_PASSWORD=mypassword
+      - GITLAB_SSH_PORT=${port2}
+      - GITLAB_SECRETS_DB_KEY_BASE=long-and-random-alpha-numeric-string
+      - SMTP_ENABLED=true
+      - SMTP_PORT=25
+      - SMTP_HOST=mail1.astri.org
+      - SMTP_STARTTLS=false
+      
+      - DB_ADAPTER=postgresql
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_USER=gitlab
+      - DB_PASS=password
+      - DB_NAME=gitlabhq_production
+
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379

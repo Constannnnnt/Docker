@@ -1,0 +1,51 @@
+version: '2'
+
+services:
+  mariadb:
+    restart: always
+    image: mariadb:7.1.0
+    container_name: jira_db
+    ports:
+      - "13306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypassword
+      - MYSQL_DATABASE=mydatabase
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /srv/docker/jira_mariadb/mariadb/data:/var/lib/mysql
+
+  RMsis:
+    restart: always
+    image: mariadb:7.1.0
+    container_name: RMsis_db
+    ports:
+      - "13307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypassword
+      - MYSQL_DATABASE=RMdatabase
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /srv/docker/jira_mariadb/RMsis/data:/var/lib/mysql
+
+  jira:
+    restart: always
+    user: root
+    image: cptactionhank/atlassian-jira-software:7.1.0
+    container_name: jira_container
+    links:
+      - mariadb:mariadb
+      - RMsis:RMsis
+    depends_on:
+      - mariadb
+      - Rmsis
+    ports:
+      - "10000:8080"
+      - "13060:3060"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /srv/docker/jira_mariadb/atlassian/jira-data:/var/atlassian/jira
+    environment:
+      - CATALINA_OPTS=
